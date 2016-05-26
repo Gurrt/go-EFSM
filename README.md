@@ -1,6 +1,13 @@
 # go-EFSM
 EFSM Implementation for my thesis. This is by no means meant to be a generic EFSM implementation, use at your own risk.
 
+# Running
+call
+```
+go run runEFSM.go
+ ```
+ And type the name of the function to execute, optionally followed by an argument.
+ Exit with control + c
 # JSON Structure
 From the root of the JSON there are three required keys:
   - info
@@ -19,7 +26,7 @@ States is an array of strings which contain state names.
 Functions is an array of function objects. These objects have the following required keys:
   - name (string)
   - transitions (array)
-  
+
 And the following optional key:
   - variable (string)
 
