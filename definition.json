@@ -1,0 +1,46 @@
+{
+	"info": {
+		"title": "Philips Hue Light",
+		"version": "0.0.1"
+	},
+	"states": ["on",
+	"off"],
+	"functions": [{
+		"name": "turnOff",
+		"transitions": [{
+			"from": "on",
+			"to": "off"
+		}]
+	},
+	{
+		"name": "turnOn",
+		"transitions": [{
+			"from": "off",
+			"to": "on"
+		}]
+	},
+	{
+		"name": "setColor",
+		"transitions": [{
+			"from": "on",
+			"to": "on"
+		},
+		{
+			"from": "off",
+			"to": "off"
+		}],
+		"variable": "lamp->color"
+	},
+	{
+		"name": "setBrightness",
+		"transitions": [{
+			"from": "on",
+			"to": "on"
+		},
+		{
+			"from": "off",
+			"to": "off"
+		}],
+		"variable": "lamp->brightness"
+	}]
+}
