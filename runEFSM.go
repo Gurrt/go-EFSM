@@ -9,6 +9,8 @@ import (
 
 func main() {
 	efsm, err := EFSM.FromJSONFile("definition.json")
+	efsm.Init()
+	efsm.Print()
 	if err != nil {
 		fmt.Print(err)
 	} else {
@@ -23,7 +25,6 @@ func main() {
 				fmt.Println("")
 			} else {
 				efsm.ExecuteFunction(text)
-				fmt.Println("New state: ", efsm.GetCurrentStateName())
 			}
 		}
 	}

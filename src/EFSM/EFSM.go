@@ -8,16 +8,42 @@ import (
 type EFSM struct {
   title string
   version string
+  stateRetriever *StateRetriever
   functions []*Function
   currentState *State
   states map[string]*State
   variableMap map[string]*Variable
+  c chan *State
 }
 
 func NewEFSM(title string, version string) *EFSM {
   variableMap := make(map[string]*Variable)
   states := make(map[string]*State)
-  return &EFSM{title: title, version:version, variableMap: variableMap, states: states}
+  c := make(chan *State)
+  return &EFSM{title: title, version:version, variableMap: variableMap, states: states, c:c}
+}
+
+func (efsm *EFSM) Init(){
+  efsm.stateRetriever.init(efsm.c)
+  c := make(chan int)
+  go efsm.stateUpdateListener(c)
+  // Only return after we got the first stateUpdate
+  _ = <-c
+}
+
+func (efsm *EFSM) stateUpdateListener(c chan int){
+  var initial bool = true
+  for state := range efsm.c {
+    if efsm.currentState != state {
+          efsm.currentState = state
+          fmt.Println("Updated current state to :", state.name)
+          if initial {
+            initial = false
+            c <- 1
+            close(c)
+          }
+    }
+  }
 }
 
 func (efsm *EFSM) ExecuteFunction(name string){
@@ -47,7 +73,7 @@ func (efsm *EFSM) Print(){
   fmt.Printf("Title: %s\nVersion: %s\n", efsm.title, efsm.version)
   fmt.Printf("Variables:\n")
   for i := range efsm.variableMap {
-   fmt.Printf("\t%s : %s\n",i,efsm.variableMap[i])
+   fmt.Printf("\t%s : %s\n",i,efsm.variableMap[i].value)
 }
   fmt.Printf("States:\n")
   for i := range efsm.states {
@@ -78,18 +104,14 @@ func (efsm *EFSM) addVariable(variableName string) *Variable {
   }
 }
 
-func (efsm *EFSM) addState(state string) error {
+func (efsm *EFSM) addState(state string) (*State, error) {
   _, ok := efsm.states[state]
   if (ok){
-    return fmt.Errorf("EFSM: state %s already defined", state)
+    return nil, fmt.Errorf("EFSM: state %s already defined", state)
   } else {
     var newState *State = newState(state)
     efsm.states[state] = newState
-    if(efsm.currentState == nil){
-      fmt.Println("Setting currentState to ", newState.name)
-      efsm.currentState = newState
-    }
-    return nil
+    return newState, nil
   }
 }
 
