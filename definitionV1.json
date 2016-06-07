@@ -1,0 +1,90 @@
+{
+	"info": {
+		"title": "Philips Hue Light",
+		"version": "0.0.1"
+	},
+	"api": {
+		"apiBase": "http://10.2.10.9/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/lights/9",
+		"apiStateCalls": [
+			{
+				"apiPath": "/",
+				"variables": {
+					"lamp->brightness": "state.bri",
+					"lamp->hue": "state.hue",
+					"lamp->sat": "state.sat"
+				},
+				"states": {
+					"on": {
+						"field": "state.on",
+						"operator": "eq",
+						"value": true
+					},
+					"off": {
+						"field": "state.on",
+						"operator": "eq",
+						"value": false
+					}
+				},
+				"interval": 5
+			}
+		]
+	},
+	"functions": [{
+		"name": "turnOff",
+		"transitions": [{
+			"from": "on",
+			"to": "off"
+		}],
+		"apiPath": "/state",
+		"apiContentType": "JSON",
+		"apiMethod": "PUT",
+		"apiBody": "{\"on\": false}"
+	},
+	{
+		"name": "turnOn",
+		"transitions": [{
+			"from": "off",
+			"to": "on"
+		}],
+		"apiPath": "/state",
+		"apiContentType": "JSON",
+		"apiMethod": "PUT",
+		"apiBody": "{\"on\": true}"
+	},
+	{
+		"name": "setHue",
+		"transitions": [{
+			"from": "on",
+			"to": "on"
+		}],
+		"variable": "lamp->hue",
+		"apiPath": "/state",
+		"apiContentType": "JSON",
+		"apiMethod": "PUT",
+		"apiBody": "{\"hue\": \"$var\"}"
+	},
+	{
+		"name": "setSat",
+		"transitions": [{
+			"from": "on",
+			"to": "on"
+		}],
+		"variable": "lamp->sat",
+		"apiPath": "/state",
+		"apiContentType": "JSON",
+		"apiMethod": "PUT",
+		"apiBody": "{\"sat\": \"$var\"}"
+	},
+	{
+		"name": "setBrightness",
+		"transitions": [{
+			"from": "on",
+			"to": "on"
+		}],
+		"variable": "lamp->brightness",
+		"apiPath": "/state",
+		"apiContentType": "JSON",
+		"apiMethod": "PUT",
+		"apiBody": "{\"bri\": \"$var\"}"
+	}]
+}

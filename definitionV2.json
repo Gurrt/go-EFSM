@@ -2,27 +2,18 @@
 	"info": {
 		"title": "Philips Hue Light",
 		"version": "0.0.2",
-		"apiBase": "http://10.2.10.9/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/lights"
+		"apiBase": "http://10.2.10.9/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/lights/9"
 	},
 	"instances": {
-		"apiPath": "/",
-		"apiContentType": "JSON",
-		"apiMethod": "GET",
-		"id": {
-			"type": "dict",
-			"location": "$key"
-		},
-		"interval": 60
-	}, 
+		"apiPath": "/"
+	},
 	"sync": 
 		[{
-			"apiPath": "/$id",
+			"apiPath": "/",
 			"variables": {
 				"lamp->brightness": "state.bri",
 				"lamp->hue": "state.hue",
-				"lamp->sat": "state.sat",
-				"lamp->name": "name",
-				"lamp->type": "type"
+				"lamp->sat": "state.sat"
 			},
 			"states": {
 				"on": {
@@ -44,7 +35,7 @@
 			"from": "on",
 			"to": "off"
 		}],
-		"apiPath": "/$id/state",
+		"apiPath": "/state",
 		"apiContentType": "JSON",
 		"apiMethod": "PUT",
 		"apiBody": "{\"on\": false}"
@@ -55,21 +46,10 @@
 			"from": "off",
 			"to": "on"
 		}],
-		"apiPath": "/$id/state",
+		"apiPath": "/state",
 		"apiContentType": "JSON",
 		"apiMethod": "PUT",
 		"apiBody": "{\"on\": true}"
-	},
-	{
-		"name": "triggerAlert",
-		"transitions": [{
-			"from": "on",
-			"to": "on"
-		}],
-		"apiPath": "/$id/state",
-		"apiContentType": "JSON",
-		"apiMethod": "PUT",
-		"apiBody": "{\"alert\": \"lselect\"}"
 	},
 	{
 		"name": "setHue",
@@ -78,7 +58,7 @@
 			"to": "on"
 		}],
 		"variable": "lamp->hue",
-		"apiPath": "/$id/state",
+		"apiPath": "/state",
 		"apiContentType": "JSON",
 		"apiMethod": "PUT",
 		"apiBody": "{\"hue\": \"$var\"}"
@@ -90,7 +70,7 @@
 			"to": "on"
 		}],
 		"variable": "lamp->sat",
-		"apiPath": "/$id/state",
+		"apiPath": "/state",
 		"apiContentType": "JSON",
 		"apiMethod": "PUT",
 		"apiBody": "{\"sat\": \"$var\"}"
@@ -102,7 +82,7 @@
 			"to": "on"
 		}],
 		"variable": "lamp->brightness",
-		"apiPath": "/$id/state",
+		"apiPath": "/state",
 		"apiContentType": "JSON",
 		"apiMethod": "PUT",
 		"apiBody": "{\"bri\": \"$var\"}"
