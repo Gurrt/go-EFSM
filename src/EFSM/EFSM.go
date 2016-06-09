@@ -8,18 +8,34 @@ import (
 type EFSM struct {
 	ID             string
 	stateRetriever *StateRetriever
-	functions      []*Function
-	currentState   *State
-	states         map[string]*State
-	variableMap    map[string]*Variable
+	Functions      []*Function
+	CurrentState   *State
+	States         map[string]*State
+	VariableMap    map[string]*Variable
 	c              chan *State
+}
+
+type InstanceJSON struct {
+	ID           string         `json:"id"`
+	Variables    []VariableJSON `json:"variables"`
+	CurrentState string         `json:"currentState"`
+}
+
+func (efsm *EFSM) Serialize() InstanceJSON {
+	var variables []VariableJSON
+	for _, v := range efsm.VariableMap {
+		variables = append(variables, v.Serialize())
+	}
+	return InstanceJSON{ID: efsm.ID,
+		Variables:    variables,
+		CurrentState: efsm.CurrentState.Name}
 }
 
 func NewEFSM(id string) *EFSM {
 	variableMap := make(map[string]*Variable)
 	states := make(map[string]*State)
 	c := make(chan *State)
-	return &EFSM{ID: id, variableMap: variableMap, states: states, c: c}
+	return &EFSM{ID: id, VariableMap: variableMap, States: states, c: c}
 }
 
 func (efsm *EFSM) Init() {
@@ -37,9 +53,9 @@ func (efsm *EFSM) Kill() {
 func (efsm *EFSM) stateUpdateListener(c chan int) {
 	var initial = true
 	for state := range efsm.c {
-		if efsm.currentState != state {
-			efsm.currentState = state
-			fmt.Println("[", efsm.ID, "] Updated current state to :", state.name)
+		if efsm.CurrentState != state {
+			efsm.CurrentState = state
+			fmt.Println("[", efsm.ID, "] Updated current state to :", state.Name)
 			if initial {
 				initial = false
 				c <- 1
@@ -56,14 +72,14 @@ func (efsm *EFSM) ExecuteFunction(name string) error {
 	if len(funcArr) > 2 {
 		return fmt.Errorf("Error: Function can have a maximum of one argument")
 	} else if len(funcArr) == 2 {
-		newState, err = efsm.currentState.executeFunction(funcArr[0], funcArr[1])
+		newState, err = efsm.CurrentState.executeFunction(funcArr[0], funcArr[1])
 	} else {
-		newState, err = efsm.currentState.executeFunction(funcArr[0], "")
+		newState, err = efsm.CurrentState.executeFunction(funcArr[0], "")
 	}
 	if err != nil {
 		return err
 	} else {
-		efsm.currentState = newState
+		efsm.CurrentState = newState
 	}
 	return nil
 }
@@ -71,55 +87,55 @@ func (efsm *EFSM) ExecuteFunction(name string) error {
 func (efsm *EFSM) Print() {
 	fmt.Printf("Id: %s\n", efsm.ID)
 	fmt.Printf("Variables:\n")
-	for i := range efsm.variableMap {
-		fmt.Printf("\t%s : %s\n", i, efsm.variableMap[i].value)
+	for i := range efsm.VariableMap {
+		fmt.Printf("\t%s : %s\n", i, efsm.VariableMap[i].Value)
 	}
 }
 
 func (efsm *EFSM) addVariable(variableName string) *Variable {
-	variable, ok := efsm.variableMap[variableName]
+	variable, ok := efsm.VariableMap[variableName]
 	if ok {
 		return variable
 	} else {
-		variable = &Variable{name: variableName, value: ""}
-		efsm.variableMap[variableName] = variable
+		variable = &Variable{Name: variableName, Value: ""}
+		efsm.VariableMap[variableName] = variable
 		return variable
 	}
 }
 
 func (efsm *EFSM) addState(state string) (*State, error) {
-	_, ok := efsm.states[state]
+	_, ok := efsm.States[state]
 	if ok {
 		return nil, fmt.Errorf("EFSM: state %s already defined", state)
 	} else {
-		var newState *State = newState(state)
-		efsm.states[state] = newState
+		newState := newState(state)
+		efsm.States[state] = newState
 		return newState, nil
 	}
 }
 
 func (efsm *EFSM) addFunction(function *Function) error {
-	for i := range function.transitions {
-		var state *State = function.transitions[i].from
+	for i := range function.Transitions {
+		var state *State = function.Transitions[i].From
 		err := state.addFunction(function)
 		if err != nil {
 			return err
 		}
 	}
-	efsm.functions = append(efsm.functions, function)
+	efsm.Functions = append(efsm.Functions, function)
 	return nil
 }
 
 func (efsm *EFSM) newTransition(from string, to string) (*Transition, error) {
-	fromState, ok := efsm.states[from]
+	fromState, ok := efsm.States[from]
 	if !ok {
 		return nil, fmt.Errorf("EFSM: from state %s not defined", from)
 	}
 
-	toState, ok2 := efsm.states[to]
+	toState, ok2 := efsm.States[to]
 	if !ok2 {
 		return nil, fmt.Errorf("EFSM: from state %s not defined", to)
 	}
 
-	return &Transition{from: fromState, to: toState}, nil
+	return &Transition{From: fromState, To: toState}, nil
 }

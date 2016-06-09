@@ -9,6 +9,10 @@ import (
 )
 
 type root struct {
+	Classes []classObject
+}
+
+type classObject struct {
 	Info      infoObject
 	Instances instanceObject
 	Functions []functionObject
@@ -130,7 +134,7 @@ func replaceIdInUrl(id string, url string) string {
 	return strings.Replace(url, "$id", id, -1)
 }
 
-func FromJSONFile(filename string) (*EFSMInstanceManager, error) {
+func FromJSONFile(filename string) ([]*EFSMInstanceManager, error) {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -140,14 +144,21 @@ func FromJSONFile(filename string) (*EFSMInstanceManager, error) {
 		return nil, err
 	}
 
-	ir := &InstanceRetriever{url: r.Info.ApiBase + r.Instances.ApiPath,
-		interval:  r.Instances.Interval,
-		idType:    r.Instances.Id.Type,
-		location:  r.Instances.Id.Location,
-		apiMethod: r.Instances.ApiMethod,
-		apiBody:   ""}
+	var instanceManagers []*EFSMInstanceManager
 
-	eim := NewEFSMInstanceManager(ir, r)
-	eim.Init()
-	return eim, nil
+	for i := range r.Classes {
+		class := r.Classes[i]
+		ir := &InstanceRetriever{url: class.Info.ApiBase + class.Instances.ApiPath,
+			interval:  class.Instances.Interval,
+			idType:    class.Instances.Id.Type,
+			location:  class.Instances.Id.Location,
+			apiMethod: class.Instances.ApiMethod,
+			apiBody:   ""}
+
+		eim := NewEFSMInstanceManager(ir, class)
+		eim.Init()
+		instanceManagers = append(instanceManagers, eim)
+	}
+
+	return instanceManagers, nil
 }

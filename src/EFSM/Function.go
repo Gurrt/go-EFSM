@@ -8,37 +8,55 @@ import (
 )
 
 type Function struct {
-	name           string
-	transitions    []*Transition
-	variable       *Variable
+	Name           string
+	Transitions    []*Transition
+	Variable       *Variable
 	apiUrl         string
 	apiContentType string
 	apiBody        string
 	apiMethod      string
 }
 
+type FunctionJSON struct {
+	Name        string           `json:"name"`
+	Transitions []TransitionJSON `json:"transitions"`
+	Variable    string           `json:"variable,omitempty"`
+}
+
+func (function *Function) Serialize() FunctionJSON {
+	var transitions []TransitionJSON
+	for i := range function.Transitions {
+		transitions = append(transitions, function.Transitions[i].Serialize())
+	}
+	var varName string
+	if function.Variable != nil {
+		varName = function.Variable.Name
+	}
+	return FunctionJSON{Name: function.Name, Variable: varName, Transitions: transitions}
+}
+
 func (function *Function) findReplaceVariableInApiBody() string {
-	if function.variable == nil {
+	if function.Variable == nil {
 		return function.apiBody
 	}
 
 	var replaceValue string
-	switch function.variable.varType.String() {
+	switch function.Variable.varType.String() {
 	case "bool":
-		replaceValue = function.variable.value
+		replaceValue = function.Variable.Value
 	case "float64":
-		replaceValue = function.variable.value
+		replaceValue = function.Variable.Value
 	case "string":
-		replaceValue = "\"" + function.variable.value + "\""
+		replaceValue = "\"" + function.Variable.Value + "\""
 	}
 	return strings.Replace(function.apiBody, "\"$var\"", replaceValue, -1)
 }
 
 func (function *Function) execute(currentState *State, arg string) (*State, error) {
-	for i := range function.transitions {
-		if function.transitions[i].from == currentState {
-			if len(arg) > 0 && function.variable != nil {
-				function.variable.setValue(arg)
+	for i := range function.Transitions {
+		if function.Transitions[i].From == currentState {
+			if len(arg) > 0 && function.Variable != nil {
+				function.Variable.setValue(arg)
 			}
 			if len(function.apiUrl) > 0 {
 				switch function.apiContentType {
@@ -62,8 +80,8 @@ func (function *Function) execute(currentState *State, arg string) (*State, erro
 					}
 				}
 			}
-			return function.transitions[i].to, nil
+			return function.Transitions[i].To, nil
 		}
 	}
-	return nil, fmt.Errorf("Function \"%s\": function called from non-linked state: %s", function.name, currentState.name)
+	return nil, fmt.Errorf("Function \"%s\": function called from non-linked state: %s", function.Name, currentState.Name)
 }

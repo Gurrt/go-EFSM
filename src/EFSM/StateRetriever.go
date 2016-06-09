@@ -57,7 +57,7 @@ func (src *StateRetrieveCall) retrieve(c chan *State) error {
 		case float64:
 			i.setValue(strconv.FormatFloat(value.(float64), 'f', -1, 64))
 		default:
-			return fmt.Errorf("Error unkown type %v for Variable %s", i.varType, i.name)
+			return fmt.Errorf("Error unkown type %v for Variable %s", i.varType, i.Name)
 		}
 	}
 

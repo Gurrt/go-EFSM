@@ -1,10 +1,19 @@
 package EFSM
 
 type Transition struct {
-  from *State
-  to *State
+	From *State
+	To   *State
+}
+
+type TransitionJSON struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+func (transition *Transition) Serialize() TransitionJSON {
+	return TransitionJSON{From: transition.From.Name, To: transition.To.Name}
 }
 
 func (transition *Transition) toString() string {
-  return transition.to.toString() + " -> " + transition.from.toString()
+	return transition.To.toString() + " -> " + transition.From.toString()
 }
