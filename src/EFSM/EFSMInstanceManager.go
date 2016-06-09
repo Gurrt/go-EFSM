@@ -29,13 +29,19 @@ type DetailedClassJSON struct {
 }
 
 func (eim *EFSMInstanceManager) Serialize() DetailedClassJSON {
+	var keys []string
 	var instances []InstanceJSON
 	var firstKey string
-	for k, v := range eim.Efsms {
+
+	for key := range eim.Efsms {
 		if firstKey == "" {
-			firstKey = k
+			firstKey = key
 		}
-		instances = append(instances, v.Efsm.Serialize())
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for i := range keys {
+		instances = append(instances, eim.Efsms[keys[i]].Efsm.Serialize())
 	}
 
 	// TODO: Move states and functions to the EFSM Instance Manager

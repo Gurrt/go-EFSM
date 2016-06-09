@@ -2,6 +2,7 @@ package EFSM
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -22,10 +23,16 @@ type InstanceJSON struct {
 }
 
 func (efsm *EFSM) Serialize() InstanceJSON {
+	var keys []string
 	var variables []VariableJSON
-	for _, v := range efsm.VariableMap {
-		variables = append(variables, v.Serialize())
+	for key := range efsm.VariableMap {
+		keys = append(keys, key)
 	}
+	sort.Strings(keys)
+	for i := range keys {
+		variables = append(variables, efsm.VariableMap[keys[i]].Serialize())
+	}
+
 	return InstanceJSON{ID: efsm.ID,
 		Variables:    variables,
 		CurrentState: efsm.CurrentState.Name}

@@ -1,0 +1,93 @@
+<dom-module id="efsm-app">
+	<template>
+	<style>
+		:host {
+			display: block;
+			font-family: RobotoDraft, "Helvetica Neue", Helvetica, Arial;
+			height: 100%;
+			margin: 0;
+			box-sizing: border-box;
+		}
+
+		paper-header-panel {
+			height: 100%;
+			--paper-header-panel-body:{
+				background: #f3f3f3;
+			}
+		}
+
+		paper-toolbar {
+			background: none;
+		}
+
+		.paper-header {
+			background-color: #3F51B5;
+			color: #fff;
+			transition: height 0.2s;
+		}
+
+		.content {
+			background: #fff;
+			padding: 2rem 1rem;
+		}
+
+		paper-menu {
+			--menu-background-color: #9076b5
+			float: left;
+		}
+
+		paper-menu#leftMenu {
+			width: 200px;
+			height: 100%;
+			--paper-menu-background-color: #3F51B5;
+			--paper-menu-color: #FFF;
+			box-sizing: border-box;
+		}
+	</style>
+		<iron-ajax
+				id="classResponse"
+				auto
+				url="http://localhost:8080/classes/"
+				handle-as="json"
+				on-response="handleClassesResponse"
+				debounce-duration="300"></iron-ajax>
+		<paper-header-panel class="paper-header flex">
+		<paper-toolbar>
+			<paper-icon-button on-tap="toggleMenu" icon="menu"></paper-icon-button>
+			<span class="title">EFSM Interface</span>
+		</paper-toolbar>
+		<paper-menu id="leftMenu" hidden$="{{!menuOpened}}">
+			<template is="dom-repeat" items="{{classes}}">
+				<paper-item>{{item.name}}</paper-item>
+			</template>
+		</paper-menu>
+		<efsm-display-stats id="statsArea" url="{{classURL}}">
+		</efsm-display-stats>
+	</paper-header-panel>
+
+	</template>
+</dom-module>
+<script>
+Polymer({
+	is: 'efsm-app',
+	properties: {
+	},
+
+	ready: function () {
+		var that = this;
+		this.menuOpened = true
+		this.$.leftMenu.addEventListener('iron-select', function(){
+			var index = that.$.leftMenu.selected;
+			that.$.statsArea.url = that.classes[index].url;
+		});
+	},
+
+	toggleMenu: function() {
+		this.menuOpened = !this.menuOpened;
+	},
+
+	handleClassesResponse: function(){
+		this.classes= this.$.classResponse.lastResponse.classes;
+	}
+});
+</script>

@@ -3,6 +3,7 @@ package main
 import (
 	"EFSM"
 	"fmt"
+	"net/http"
 )
 
 func main() {
@@ -11,7 +12,9 @@ func main() {
 		fmt.Print(err)
 		return
 	}
-	EFSM.StartAPI(eims)
+	go EFSM.StartAPI(eims)
+	fmt.Println("Starting HTML Interface @ port 80")
+	panic(http.ListenAndServe(":80", http.FileServer(http.Dir("html"))))
 	/*
 		for i := range eims {
 			eims[i].Print(i)

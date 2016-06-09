@@ -1,0 +1,55 @@
+<dom-module id="efsm-display-stats">
+    <template>
+        <style>
+            :host {
+                display: block;
+                font-family: RobotoDraft, "Helvetica Neue", Helvetica, Arial;
+                padding-left: 10px;
+                box-sizing: border-box;
+                color: black;
+                overflow: hidden;
+            }
+        </style>
+        <iron-ajax
+                id="instanceResponse"
+                handle-as="json"
+                on-response="handleInstanceResponse"
+                debounce-duration="300"></iron-ajax>
+        <p hidden$="{{instances === undefined}}">Version: {{instances.version}}</p>
+        <template is="dom-repeat" items="{{instances.instances}}">
+            <paper-card heading="{{item.id}}">
+                <div class="card-content">
+                <template is="dom-repeat" items="{{item.variables}}">
+                <p>{{item.name}} -> {{item.value}}</p>
+                </template>
+                </div>
+            </paper-card>
+        </template>
+    </template>
+</dom-module>
+<script>
+    Polymer({
+        is: 'efsm-display-stats',
+        properties: {
+            url: {
+                type: String,
+                observer: "urlChanged"
+            }
+        },
+
+        ready: function () {
+            var that = this;
+        },
+
+        handleInstanceResponse: function(){
+            this.instances = this.$.instanceResponse.lastResponse
+        },
+
+        urlChanged: function() {
+            console.log("Trying to set url to :"+ this.url);
+            this.$.instanceResponse.url = this.url;
+            this.$.instanceResponse.generateRequest();
+        }
+
+    });
+</script>

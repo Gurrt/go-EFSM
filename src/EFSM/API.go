@@ -54,6 +54,7 @@ func StartAPI(classes []*EFSMInstanceManager) {
 }
 
 func (runtime *RuntimeInfo) getClass(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	vars := mux.Vars(r)
 	id := vars["id"]
 	strId, _ := strconv.Atoi(id)
@@ -61,5 +62,6 @@ func (runtime *RuntimeInfo) getClass(w http.ResponseWriter, r *http.Request) {
 }
 
 func (runtime *RuntimeInfo) getClasses(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(runtime.generateTopLevelJSON(r))
 }
