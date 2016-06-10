@@ -4,27 +4,72 @@
             :host {
                 display: block;
                 font-family: RobotoDraft, "Helvetica Neue", Helvetica, Arial;
-                padding-left: 10px;
+                padding: 10px 10px;
                 box-sizing: border-box;
                 color: black;
                 overflow: hidden;
+            }
+
+            paper-card {
+                border: 2px solid transparent;
+            }
+
+            paper-card.selected {
+                border: 2px solid transparent;
+                -moz-border-image: -moz-linear-gradient(top, #3acfd5 0%, #3a4ed5 100%);
+                -webkit-border-image: -webkit-linear-gradient(top, #3acfd5 0%, #3a4ed5 100%);
+                border-image: linear-gradient(to bottom, #3acfd5 0%, #3a4ed5 100%);
+                border-image-slice: 1;
+            }
+
+            .functionContainer {
+                margin-top: 20px;
+            }
+
+            .functionContainer.static paper-button{
+                background: #3acfd5;
+                color: #fff;
+            }
+
+            .functionContainer.variable paper-button{
+                background: #3a4ed5;
+                color: #fff;
             }
         </style>
         <iron-ajax
                 id="instanceResponse"
                 handle-as="json"
                 on-response="handleInstanceResponse"
-                debounce-duration="300"></iron-ajax>
-        <p hidden$="{{instances === undefined}}">Version: {{instances.version}}</p>
-        <template is="dom-repeat" items="{{instances.instances}}">
-            <paper-card heading="{{item.id}}">
+                ></iron-ajax>
+        <iron-ajax
+                id="functionCall"
+                handle-as="json"
+                on-response="functionCallResponse"
+                ></iron-ajax>
+        <template is="dom-repeat" items="{{instances}}">
+            <paper-card class$="{{addSelectedClass(item.selected)}}" on-tap="select">
                 <div class="card-content">
+                <p><i>current state</i> -> <b>[[item.currentState]]</b></p>
                 <template is="dom-repeat" items="{{item.variables}}">
-                <p>{{item.name}} -> {{item.value}}</p>
+                <p><i>[[item.name]]</i> -> [[item.value]]</p>
                 </template>
                 </div>
             </paper-card>
         </template>
+        <div hidden$="[[!initialized]]" class="functionContainer static">
+            <p>Static Functions</p>
+        <template is="dom-repeat" items="{{functions.static}}">
+            <paper-button raised on-tap="staticFunctionButtonPressed">{{computebuttonText(item.name)}}</paper-button>
+        </template>
+        </div>
+        <div hidden$="[[!initialized]]" class="functionContainer variable">
+            <p>Variable Functions</p>
+            <template is="dom-repeat" items="{{functions.variable}}">
+                <paper-button raised on-tap="variableFunctionButtonPressed">{{computebuttonText(item.name)}}</paper-button>
+            </template>
+            <p>Value</p>
+            <input value="{{variableValue::input}}">
+        </div>
     </template>
 </dom-module>
 <script>
@@ -39,14 +84,170 @@
 
         ready: function () {
             var that = this;
+            this.initialized = false;
+        },
+
+        hidden: function(instances){
+            console.log("Instances: "+instances);
+          return instances === undefined;
+        },
+
+        select: function(e){
+          console.log("Card clicked!");
+          var selected =  this.instances[e.model.index].selected;
+          selected = (selected == null || selected == false);
+          this.set('instances.'+e.model.index+'.selected', selected);
+          //this.instances.instances[e.model.index].selected = true
         },
 
         handleInstanceResponse: function(){
-            this.instances = this.$.instanceResponse.lastResponse
+            this.initialized = true;
+            this.version = this.$.instanceResponse.lastResponse.version;
+            this.parseInstances(this.$.instanceResponse.lastResponse.instances);
+            this.parseFunctions(this.$.instanceResponse.lastResponse.functions);
+            setTimeout(function(){
+                this.$.instanceResponse.generateRequest();
+            }.bind(this), 5000);
+        },
+
+        generateLookupMap: function(arr){
+            var length = arr.length;
+            var map = {};
+            for (var i=0; i < length; i++){
+                map[arr[i].id] = {found: false, data:arr[i]};
+            }
+            return map;
+        },
+
+        deleteInstance: function(id){
+          var length = this.instances.length;
+          for (var i=0; i < length; i++){
+              if(this.instances[i].id === id){
+                  delete(this.instances[i]);
+                  break;
+              }
+          }
+        },
+
+        updateInstance: function(id, data){
+          var length = this.instances.length;
+          for (var i=0; i < length; i++){
+           if (this.instances[i].id === id){
+               console.log(JSON.stringify(this.instances[i]));
+               var selected = this.instances[i].selected;
+               this.set('instances.'+i, data);
+               this.set('instances.'+i+'.selected', selected);
+               break;
+           }
+          }
+        },
+
+        parseInstances: function(updatedInstanceList){
+          if(this.instances === undefined) {
+              this.instances = updatedInstanceList;
+          }
+          var newInstances = [];
+          var oldKeys = this.generateLookupMap(this.instances);
+          var newKeys = this.generateLookupMap(updatedInstanceList);
+          // Check which keys are new and which are old
+          for (var key in newKeys){
+              if (newKeys.hasOwnProperty(key)){
+                  if(oldKeys[key]){
+                      oldKeys[key].found = true;
+                  } else {
+                      newInstances.push = newKeys[key].data;
+                  }
+              }
+          }
+          // Remove keys that we didn't find, update the other keys
+          for (var key in oldKeys){
+              if (oldKeys.hasOwnProperty(key)){
+                  if (!oldKeys[key].found){
+                    this.deleteInstance(key);
+                  } else {
+                    this.updateInstance(key, newKeys[key].data)
+                  }
+              }
+          }
+          // Append the new keys to the end of the list
+          this.instances.concat(newInstances);
+        },
+
+        parseFunctions: function(funcObj){
+            var functions = {
+                static: [],
+                variable: []
+            };
+            var length = funcObj.length;
+            for (var i=0; i < length; i++){
+                if (funcObj[i].variable){
+                    functions.variable.push(funcObj[i]);
+                } else {
+                    functions.static.push(funcObj[i]);
+                }
+            }
+            this.functions = functions;
+        },
+
+        functionCallResponse: function(){
+
+        },
+
+        addSelectedClass: function(selected){
+            return selected ? 'selected' : '';
+        },
+
+        getSelectedInstances: function(){
+            var length = this.instances.length;
+            var selectedInstances = "";
+            var first = true;
+            for (var i = 0; i < length; i++){
+                if (this.instances[i].selected){
+                    if (first){
+                        first = false;
+                        selectedInstances += this.instances[i].id;
+                    } else {
+                        selectedInstances += ","+this.instances[i].id;
+                    }
+                }
+            }
+            return selectedInstances;
+        },
+
+        computebuttonText: function(text){
+            var computed = "";
+            var length = text.length;
+            for (var i=0; i < length; i++){
+                var c = text.charAt(i);
+                if (c == c.toLocaleUpperCase(c)){
+                    computed += "_"+c;
+                } else {
+                    computed += c;
+                }
+            }
+            return computed;
+        },
+
+        staticFunctionButtonPressed: function(e){
+            var url =  this.functions.static[e.model.index].url;
+            url += "?ids="+this.getSelectedInstances();
+
+            this.$.functionCall.url = url;
+            this.$.functionCall.generateRequest();
+        },
+
+        variableFunctionButtonPressed: function(e){
+            var url =  this.functions.variable[e.model.index].url;
+            url += "?ids="+this.getSelectedInstances();
+            url += "&value="+this.variableValue;
+            this.$.functionCall.url = url;
+            this.$.functionCall.generateRequest();
         },
 
         urlChanged: function() {
-            console.log("Trying to set url to :"+ this.url);
+            this.instances = undefined;
+            this.functions = undefined;
+            this.initialized = false;
             this.$.instanceResponse.url = this.url;
             this.$.instanceResponse.generateRequest();
         }

@@ -27,28 +27,32 @@ func (inst *InstanceRetriever) retrieve(c chan []string) {
 	} else {
 		req, err = http.NewRequest(inst.apiMethod, inst.url, nil)
 	}
-
 	if err != nil {
 		fmt.Print(err)
+		return
 	}
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Print(err)
+		return
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Print(err)
+		return
 	}
 
 	json, err := GetGenericJSONMap(body)
 	if err != nil {
 		fmt.Print(err)
+		return
 	}
 	var instances []string
 	instances, err = GetMultipleValuesFromGenericJSONMap(json, inst.location)
 	if err != nil {
 		fmt.Print(err)
+		return
 	}
 	c <- instances
 }

@@ -21,9 +21,10 @@ type FunctionJSON struct {
 	Name        string           `json:"name"`
 	Transitions []TransitionJSON `json:"transitions"`
 	Variable    string           `json:"variable,omitempty"`
+	URL         string           `json:"url"`
 }
 
-func (function *Function) Serialize() FunctionJSON {
+func (function *Function) Serialize(baseURL string) FunctionJSON {
 	var transitions []TransitionJSON
 	for i := range function.Transitions {
 		transitions = append(transitions, function.Transitions[i].Serialize())
@@ -32,7 +33,7 @@ func (function *Function) Serialize() FunctionJSON {
 	if function.Variable != nil {
 		varName = function.Variable.Name
 	}
-	return FunctionJSON{Name: function.Name, Variable: varName, Transitions: transitions}
+	return FunctionJSON{Name: function.Name, Variable: varName, Transitions: transitions, URL: fmt.Sprintf("%s/%s", baseURL, function.Name)}
 }
 
 func (function *Function) findReplaceVariableInApiBody() string {

@@ -28,7 +28,7 @@ type DetailedClassJSON struct {
 	Functions []FunctionJSON `json:"functions"`
 }
 
-func (eim *EFSMInstanceManager) Serialize() DetailedClassJSON {
+func (eim *EFSMInstanceManager) Serialize(baseURL string) DetailedClassJSON {
 	var keys []string
 	var instances []InstanceJSON
 	var firstKey string
@@ -55,7 +55,7 @@ func (eim *EFSMInstanceManager) Serialize() DetailedClassJSON {
 	var functions []FunctionJSON
 	funcArray := eim.Efsms[firstKey].Efsm.Functions
 	for i := range funcArray {
-		functions = append(functions, funcArray[i].Serialize())
+		functions = append(functions, funcArray[i].Serialize(baseURL))
 	}
 
 	return DetailedClassJSON{Name: eim.template.Info.Title,
@@ -91,12 +91,12 @@ func (eim *EFSMInstanceManager) Init() {
 	_ = <-firstUpdated
 }
 
-func (eim *EFSMInstanceManager) Exec(id string, function string) error {
-	value, found := eim.Efsms[id]
+func (eim *EFSMInstanceManager) Exec(id string, function string, value string) error {
+	efsm, found := eim.Efsms[id]
 	if !found {
 		return fmt.Errorf("Error EFSM with ID %s not found", id)
 	}
-	error := value.Efsm.ExecuteFunction(function)
+	error := efsm.Efsm.ExecuteFunction(function, value)
 	if error != nil {
 		return error
 	}

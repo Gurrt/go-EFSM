@@ -16,13 +16,15 @@ func (state *State) executeFunction(name string, args string) (*State, error) {
 	function, ok := state.Functions[name]
 	if !ok {
 		return nil, fmt.Errorf("State \"%s\": function %s does not exist or is not callable from this state. Callable functions: %v", state.Name, name, state.Functions)
+	}
+	if function.Variable != nil && args == "" {
+		return nil, fmt.Errorf("Missing required value parameter for function %s", name)
+	}
+	newState, err := function.execute(state, args)
+	if err != nil {
+		return nil, err
 	} else {
-		newState, err := function.execute(state, args)
-		if err != nil {
-			return nil, err
-		} else {
-			return newState, nil
-		}
+		return newState, nil
 	}
 }
 

@@ -3,7 +3,7 @@
 		"info": {
 			"title": "Philips Hue Light Groups",
 			"version": "0.0.1",
-			"apiBase": "http://10.2.10.9/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/groups"
+			"apiBase": "http://172.16.0.209/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/groups"
 		},
 		"instances": {
 			"apiPath": "/",
@@ -105,7 +105,7 @@
 		"info": {
 			"title": "Philips Hue Light",
 			"version": "0.0.2",
-			"apiBase": "http://10.2.10.9/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/lights"
+			"apiBase": "http://172.16.0.209/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/lights"
 		},
 		"instances": {
 			"apiPath": "/",

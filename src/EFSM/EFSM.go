@@ -3,7 +3,6 @@ package EFSM
 import (
 	"fmt"
 	"sort"
-	"strings"
 )
 
 type EFSM struct {
@@ -72,17 +71,10 @@ func (efsm *EFSM) stateUpdateListener(c chan int) {
 	}
 }
 
-func (efsm *EFSM) ExecuteFunction(name string) error {
-	funcArr := strings.Split(name, " ")
+func (efsm *EFSM) ExecuteFunction(name string, value string) error {
 	var newState *State
 	var err error
-	if len(funcArr) > 2 {
-		return fmt.Errorf("Error: Function can have a maximum of one argument")
-	} else if len(funcArr) == 2 {
-		newState, err = efsm.CurrentState.executeFunction(funcArr[0], funcArr[1])
-	} else {
-		newState, err = efsm.CurrentState.executeFunction(funcArr[0], "")
-	}
+	newState, err = efsm.CurrentState.executeFunction(name, value)
 	if err != nil {
 		return err
 	} else {
