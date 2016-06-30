@@ -91,15 +91,18 @@ func (efsm *EFSM) Print() {
 	}
 }
 
-func (efsm *EFSM) addVariable(variableName string) *Variable {
-	variable, ok := efsm.VariableMap[variableName]
-	if ok {
-		return variable
-	} else {
-		variable = &Variable{Name: variableName, Value: ""}
-		efsm.VariableMap[variableName] = variable
-		return variable
+func (efsm *EFSM) setVariables(variables map[string]Variable) {
+	pointerMap := make(map[string]*Variable)
+	for key := range variables {
+		varObj := variables[key]
+		fmt.Println("Handing variable: ", key, " addr: ", &varObj)
+		pointerMap[key] = &varObj
 	}
+	efsm.VariableMap = pointerMap
+}
+
+func (efsm *EFSM) getVariable(variable string) *Variable {
+	return efsm.VariableMap[variable]
 }
 
 func (efsm *EFSM) addState(state string) (*State, error) {

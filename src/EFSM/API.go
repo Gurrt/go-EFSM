@@ -85,8 +85,9 @@ func (runtime *RuntimeInfo) executeFunction(w http.ResponseWriter, r *http.Reque
 	valueArr := query["value"]
 	if valueArr != nil {
 		value = string(valueArr[0])
+		value = eim.ConvertVariableToDomainModel(value, function)
+		fmt.Println("Converted value:", value)
 	}
-	fmt.Println("val", value)
 	for i := range idList {
 		efsm, found := eim.Efsms[idList[i]]
 		if !found {

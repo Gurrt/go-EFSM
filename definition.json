@@ -1,112 +1,15 @@
 {
 	"classes": [{
 		"info": {
-			"title": "Philips Hue Light Groups",
-			"version": "0.0.1",
-			"apiBase": "http://172.16.0.209/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/groups"
-		},
-		"instances": {
-			"apiPath": "/",
-			"apiContentType": "JSON",
-			"apiMethod": "GET",
-			"id": {
-				"type": "dict",
-				"location": "$key"
-			},
-			"interval": 60
-		},
-		"sync": [{
-			"apiPath": "/$id",
-			"variables": {
-				"group.name": "name",
-				"lamp.brightness": "action.bri",
-				"lamp.hue": "action.hue",
-				"lamp.sat": "action.sat"
-			},
-			"states": {
-				"on": {
-					"field": "state.any_on",
-					"operator": "eq",
-					"value": true
-				},
-				"off": {
-					"field": "state.any_on",
-					"operator": "eq",
-					"value": false
-				}
-			},
-			"interval": 5
-		}],
-		"functions": [{
-			"name": "turnOff",
-			"transitions": [{
-				"from": "on",
-				"to": "off"
-			}],
-			"apiPath": "/$id/action",
-			"apiContentType": "JSON",
-			"apiMethod": "PUT",
-			"apiBody": "{\"on\": false}"
-		}, {
-			"name": "turnOn",
-			"transitions": [{
-				"from": "off",
-				"to": "on"
-			}],
-			"apiPath": "/$id/action",
-			"apiContentType": "JSON",
-			"apiMethod": "PUT",
-			"apiBody": "{\"on\": true}"
-		}, {
-			"name": "setHue",
-			"transitions": [{
-				"from": "on",
-				"to": "on"
-			}],
-			"variable": "lamp.hue",
-			"apiPath": "/$id/action",
-			"apiContentType": "JSON",
-			"apiMethod": "PUT",
-			"apiBody": "{\"hue\": \"$var\"}"
-		}, {
-			"name": "triggerAlert",
-			"transitions": [{
-				"from": "on",
-				"to": "on"
-			}],
-			"apiPath": "/$id/action",
-			"apiContentType": "JSON",
-			"apiMethod": "PUT",
-			"apiBody": "{\"alert\": \"lselect\"}"
-		}, {
-			"name": "setSat",
-			"transitions": [{
-				"from": "on",
-				"to": "on"
-			}],
-			"variable": "lamp.sat",
-			"apiPath": "/$id/action",
-			"apiContentType": "JSON",
-			"apiMethod": "PUT",
-			"apiBody": "{\"sat\": \"$var\"}"
-		}, {
-			"name": "setBrightness",
-			"transitions": [{
-				"from": "on",
-				"to": "on"
-			}],
-			"variable": "lamp.brightness",
-			"apiPath": "/$id/action",
-			"apiContentType": "JSON",
-			"apiMethod": "PUT",
-			"apiBody": "{\"bri\": \"$var\"}"
-		}]
-	}, {
-		"info": {
 			"title": "Philips Hue Light",
 			"version": "0.0.2",
 			"apiBase": "http://172.16.0.209/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/lights"
 		},
+		"profiles": [
+			{"id": "human_readable_name"},
+			{"id": "dimmable", "brightness": "uint8"},
+			{"id": "hue_saturation_colors", "hue": "uint16", "saturation": "uint8"}
+		],
 		"instances": {
 			"apiPath": "/",
 			"apiContentType": "JSON",
@@ -120,11 +23,10 @@
 		"sync": [{
 			"apiPath": "/$id",
 			"variables": {
-				"lamp.brightness": "state.bri",
-				"lamp.hue": "state.hue",
-				"lamp.sat": "state.sat",
-				"lamp.name": "name",
-				"lamp.type": "type"
+				"human_readable_name.name": "name",
+				"dimmable.brightness": "state.bri",
+				"hue_saturation_colors.hue": "state.hue",
+				"hue_saturation_colors.saturation": "state.sat"
 			},
 			"states": {
 				"on": {
@@ -166,7 +68,7 @@
 				"from": "on",
 				"to": "on"
 			}],
-			"variable": "lamp.hue",
+			"variable": "hue_saturation_colors.hue",
 			"apiPath": "/$id/state",
 			"apiContentType": "JSON",
 			"apiMethod": "PUT",
@@ -181,13 +83,25 @@
 			"apiContentType": "JSON",
 			"apiMethod": "PUT",
 			"apiBody": "{\"alert\": \"lselect\"}"
-		}, {
+		},
+		{
+			"name": "colorLoop",
+			"transitions": [{
+				"from": "on",
+				"to": "on"
+			}],
+			"apiPath": "/$id/state",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"effect\": \"colorloop\"}"
+		},
+		{
 			"name": "setSat",
 			"transitions": [{
 				"from": "on",
 				"to": "on"
 			}],
-			"variable": "lamp.sat",
+			"variable": "hue_saturation_colors.saturation",
 			"apiPath": "/$id/state",
 			"apiContentType": "JSON",
 			"apiMethod": "PUT",
@@ -198,7 +112,7 @@
 				"from": "on",
 				"to": "on"
 			}],
-			"variable": "lamp.brightness",
+			"variable": "dimmable.brightness",
 			"apiPath": "/$id/state",
 			"apiContentType": "JSON",
 			"apiMethod": "PUT",

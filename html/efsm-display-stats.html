@@ -51,7 +51,7 @@
                 <div class="card-content">
                 <p><i>current state</i> -> <b>[[item.currentState]]</b></p>
                 <template is="dom-repeat" items="{{item.variables}}">
-                <p><i>[[item.name]]</i> -> [[item.value]]</p>
+                <p><i>[[item.name]] ([[item.type]])</i> -> {{computeVariableText(item.value, item.type)}}</p>
                 </template>
                 </div>
             </paper-card>
@@ -226,6 +226,16 @@
                 }
             }
             return computed;
+        },
+
+        computeVariableText: function(text, type){
+            switch(type){
+              case "permille": return parseFloat(Math.round(text * 100) / 100).toFixed(2) + "‰";
+              case "percent": return parseFloat(Math.round(text * 100) / 100).toFixed(2) + "%";
+              case "circle": return parseFloat(Math.round(text * 100) / 100).toFixed(2) +" deg.";
+              default: return text;
+            }
+            return text;
         },
 
         staticFunctionButtonPressed: function(e){

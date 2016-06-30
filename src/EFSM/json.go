@@ -15,6 +15,7 @@ type root struct {
 type classObject struct {
 	Info      infoObject
 	Instances instanceObject
+	Profiles  []map[string]string
 	Functions []functionObject
 	Sync      []apiStateObject
 }
@@ -148,6 +149,23 @@ func FromJSONFile(filename string) ([]*EFSMInstanceManager, error) {
 
 	for i := range r.Classes {
 		class := r.Classes[i]
+
+		profiles := make(map[string]*Profile)
+		for j := range class.Profiles {
+			profile := class.Profiles[j]
+			var id string
+			conversions := make(map[string]string)
+			for key := range profile {
+				if key == "id" {
+					id = profile[key]
+				} else {
+					conversions[key] = profile[key]
+				}
+			}
+			pro := &Profile{Id: id, Conversions: conversions}
+			profiles[id] = pro
+		}
+
 		ir := &InstanceRetriever{url: class.Info.ApiBase + class.Instances.ApiPath,
 			interval:  class.Instances.Interval,
 			idType:    class.Instances.Id.Type,
@@ -155,7 +173,7 @@ func FromJSONFile(filename string) ([]*EFSMInstanceManager, error) {
 			apiMethod: class.Instances.ApiMethod,
 			apiBody:   ""}
 
-		eim := NewEFSMInstanceManager(ir, class)
+		eim := NewEFSMInstanceManager(ir, profiles, class)
 		eim.Init()
 		instanceManagers = append(instanceManagers, eim)
 	}

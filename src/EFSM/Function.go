@@ -41,13 +41,8 @@ func (function *Function) findReplaceVariableInApiBody() string {
 		return function.apiBody
 	}
 
-	var replaceValue string
-	switch function.Variable.varType.String() {
-	case "bool":
-		replaceValue = function.Variable.Value
-	case "float64":
-		replaceValue = function.Variable.Value
-	case "string":
+	var replaceValue string = function.Variable.Value
+	if function.Variable.VarType == "string" {
 		replaceValue = "\"" + function.Variable.Value + "\""
 	}
 	return strings.Replace(function.apiBody, "\"$var\"", replaceValue, -1)

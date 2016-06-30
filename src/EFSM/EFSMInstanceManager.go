@@ -3,6 +3,7 @@ package EFSM
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 type efsmInstance struct {
@@ -17,6 +18,8 @@ type EFSMInstanceManager struct {
 	latestInstanceSlice    []string
 	updatedInstanceChannel chan []string
 	shutdownChannel        chan struct{}
+	profiles               map[string]*Profile
+	variables              map[string]Variable
 	template               classObject
 }
 
@@ -26,6 +29,54 @@ type DetailedClassJSON struct {
 	Instances []InstanceJSON `json:"instances"`
 	States    []string       `json:"states"`
 	Functions []FunctionJSON `json:"functions"`
+}
+
+func (eim *EFSMInstanceManager) rewriteInstanceVariables(instances []InstanceJSON) []InstanceJSON {
+	dmc := &DomainModelConnector{url: "http://127.0.0.1:8081/"}
+	for i := range instances {
+		instance := instances[i]
+		for j := range instance.Variables {
+			variable := instance.Variables[j]
+			profile := eim.profiles[variable.Profile]
+			conversion, found := profile.Conversions[variable.Name]
+			if found {
+				val, err := dmc.convertToDomainModel(profile.Id, variable.Name, instances[i].Variables[j].Value, conversion)
+				if err == nil {
+					instances[i].Variables[j].Value = val
+				} else {
+					fmt.Println("Error converting value to domain model type:", err)
+				}
+			}
+		}
+	}
+	return instances
+}
+
+func (eim *EFSMInstanceManager) getProfileAndVarNameFromFunction(functionName string) (string, string) {
+	for i := range eim.template.Functions {
+		if eim.template.Functions[i].Name == functionName {
+			profVar := strings.Split(eim.template.Functions[i].Variable, ".")
+			return profVar[0], profVar[1]
+		}
+	}
+	return "", ""
+}
+
+func (eim *EFSMInstanceManager) ConvertVariableToDomainModel(value string, functionName string) string {
+	id, varName := eim.getProfileAndVarNameFromFunction(functionName)
+	conversion := eim.profiles[id].Conversions[varName]
+	if conversion != "" {
+		fmt.Println("Converting ", id, varName, value, conversion)
+
+		dmc := &DomainModelConnector{url: "http://127.0.0.1:8081/"}
+		val, err := dmc.convertFromDomainModel(id, varName, value, conversion)
+		if err != nil {
+			fmt.Println(err)
+			return value
+		}
+		return val
+	}
+	return value
 }
 
 func (eim *EFSMInstanceManager) Serialize(baseURL string) DetailedClassJSON {
@@ -43,6 +94,8 @@ func (eim *EFSMInstanceManager) Serialize(baseURL string) DetailedClassJSON {
 	for i := range keys {
 		instances = append(instances, eim.Efsms[keys[i]].Efsm.Serialize())
 	}
+	// Transform the variables if we need to
+	instances = eim.rewriteInstanceVariables(instances)
 
 	// TODO: Move states and functions to the EFSM Instance Manager
 	// Grab the states and functions from one of the EFSM's
@@ -65,11 +118,15 @@ func (eim *EFSMInstanceManager) Serialize(baseURL string) DetailedClassJSON {
 		Instances: instances}
 }
 
-func NewEFSMInstanceManager(ir *InstanceRetriever, template classObject) *EFSMInstanceManager {
+func NewEFSMInstanceManager(ir *InstanceRetriever, profiles map[string]*Profile, template classObject) *EFSMInstanceManager {
 	efsms := make(map[string]*efsmInstance)
+	variables := make(map[string]Variable)
 	uic := make(chan []string)
 	sc := make(chan struct{})
-	return &EFSMInstanceManager{Efsms: efsms, instanceRetriever: ir, updatedInstanceChannel: uic, shutdownChannel: sc, template: template}
+
+	eim := &EFSMInstanceManager{Efsms: efsms, instanceRetriever: ir, profiles: profiles, variables: variables, updatedInstanceChannel: uic, shutdownChannel: sc, template: template}
+	eim.initVariables()
+	return eim
 }
 
 func (eim *EFSMInstanceManager) Init() {
@@ -89,6 +146,11 @@ func (eim *EFSMInstanceManager) Init() {
 		}
 	}()
 	_ = <-firstUpdated
+}
+
+func (eim *EFSMInstanceManager) initVariables() {
+	dmc := &DomainModelConnector{url: "http://127.0.0.1:8081/"}
+	eim.variables = dmc.getVariablesForProfiles(eim.profiles)
 }
 
 func (eim *EFSMInstanceManager) Exec(id string, function string, value string) error {
@@ -164,13 +226,16 @@ func (eim *EFSMInstanceManager) AddNewEFSM(id string) error {
 		return fmt.Errorf("EFSM with id %s already exists, not adding a new EFSM with the same ID", id)
 	}
 	efsm := NewEFSM(id)
+	efsm.setVariables(eim.variables)
+
 	sr := &StateRetriever{}
 
 	stateCalls := eim.template.Sync
 	for i := range stateCalls {
 		src := NewStateRetrieveCall(replaceIdInUrl(id, (eim.template.Info.ApiBase+stateCalls[i].ApiPath)), stateCalls[i].Interval)
+
 		for key, value := range stateCalls[i].Variables {
-			src.variables[efsm.addVariable(key)] = value
+			src.variables[efsm.getVariable(key)] = value
 		}
 
 		for key, value := range stateCalls[i].States {
@@ -195,8 +260,9 @@ func (eim *EFSMInstanceManager) AddNewEFSM(id string) error {
 		temp.apiMethod = fo.ApiMethod
 
 		if fo.Variable != "" {
-			temp.Variable = efsm.addVariable(fo.Variable)
+			temp.Variable = efsm.getVariable(fo.Variable)
 		}
+
 		for j := range fo.Transitions {
 			t := fo.Transitions[j]
 			trans, err := efsm.newTransition(t.From, t.To)

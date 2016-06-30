@@ -46,9 +46,6 @@ func (src *StateRetrieveCall) retrieve(c chan *State) error {
 		if err != nil {
 			return err
 		}
-		if i.varType == nil {
-			i.varType = reflect.TypeOf(value)
-		}
 		switch value.(type) {
 		case string:
 			i.setValue(value.(string))
@@ -57,7 +54,7 @@ func (src *StateRetrieveCall) retrieve(c chan *State) error {
 		case float64:
 			i.setValue(strconv.FormatFloat(value.(float64), 'f', -1, 64))
 		default:
-			return fmt.Errorf("Error unkown type %v for Variable %s", i.varType, i.Name)
+			return fmt.Errorf("Error unkown type for Variable %s", i.Name)
 		}
 	}
 
