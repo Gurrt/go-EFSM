@@ -14,10 +14,7 @@
 			"apiPath": "/",
 			"apiContentType": "JSON",
 			"apiMethod": "GET",
-			"id": {
-				"type": "dict",
-				"location": "$key"
-			},
+			"idLocation": "$key",
 			"interval": 60
 		},
 		"sync": [{
@@ -117,6 +114,174 @@
 			"apiContentType": "JSON",
 			"apiMethod": "PUT",
 			"apiBody": "{\"bri\": \"$var\"}"
+		}]
+	},
+	{
+		"info": {
+			"title": "Philips Hue Groups",
+			"version": "0.0.1",
+			"apiBase": "http://172.16.0.209/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P/groups"
+		},
+		"profiles": [
+			{"id": "human_readable_name"},
+			{"id": "dimmable", "brightness": "uint8"},
+			{"id": "hue_saturation_colors", "hue": "uint16", "saturation": "uint8"}
+		],
+		"instances": {
+			"apiPath": "/",
+			"apiContentType": "JSON",
+			"apiMethod": "GET",
+			"idLocation": "$key",
+			"interval": 60
+		},
+		"sync": [{
+			"apiPath": "/$id",
+			"variables": {
+				"human_readable_name.name": "name",
+				"dimmable.brightness": "action.bri",
+				"hue_saturation_colors.hue": "action.hue",
+				"hue_saturation_colors.saturation": "action.sat"
+			},
+			"states": {
+				"on": {
+					"field": "action.on",
+					"operator": "eq",
+					"value": true
+				},
+				"off": {
+					"field": "action.on",
+					"operator": "eq",
+					"value": false
+				}
+			},
+			"interval": 5
+		}],
+		"functions": [{
+			"name": "turnOff",
+			"transitions": [{
+				"from": "on",
+				"to": "off"
+			}],
+			"apiPath": "/$id/action",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"on\": false}"
+		}, {
+			"name": "turnOn",
+			"transitions": [{
+				"from": "off",
+				"to": "on"
+			}],
+			"apiPath": "/$id/action",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"on\": true}"
+		}, {
+			"name": "setHue",
+			"transitions": [{
+				"from": "on",
+				"to": "on"
+			}],
+			"variable": "hue_saturation_colors.hue",
+			"apiPath": "/$id/action",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"hue\": \"$var\"}"
+		}, {
+			"name": "triggerAlert",
+			"transitions": [{
+				"from": "on",
+				"to": "on"
+			}],
+			"apiPath": "/$id/action",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"alert\": \"lselect\"}"
+		},
+		{
+			"name": "colorLoop",
+			"transitions": [{
+				"from": "on",
+				"to": "on"
+			}],
+			"apiPath": "/$id/action",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"effect\": \"colorloop\"}"
+		},
+		{
+			"name": "setSat",
+			"transitions": [{
+				"from": "on",
+				"to": "on"
+			}],
+			"variable": "hue_saturation_colors.saturation",
+			"apiPath": "/$id/action",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"sat\": \"$var\"}"
+		}, {
+			"name": "setBrightness",
+			"transitions": [{
+				"from": "on",
+				"to": "on"
+			}],
+			"variable": "dimmable.brightness",
+			"apiPath": "/$id/action",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"bri\": \"$var\"}"
+		}]
+	},
+	{
+		"info": {
+			"title": "Philips Hue Scenes",
+			"version": "0.0.1",
+			"apiBase": "http://172.16.0.209/api/MukdaH5q3BeJ2MoPvmbYI9J2I7F4ak2gab1C4W6P"
+		},
+		"profiles": [
+			{"id": "human_readable_name"}
+		],
+		"instances": {
+			"apiPath": "/scenes",
+			"apiContentType": "JSON",
+			"apiMethod": "GET",
+			"idLocation": "$key",
+			"interval": 60
+		},
+		"sync": [{
+			"apiPath": "/scenes/$id",
+			"variables": {
+				"human_readable_name.name": "name"
+			},
+			"states": {
+				"recycle": {
+					"field": "recycle",
+					"operator": "eq",
+					"value": true
+				},
+				"no_recycle": {
+					"field": "recycle",
+					"operator": "eq",
+					"value": false
+				}
+			},
+			"interval": 600
+		}],
+		"functions": [{
+			"name": "turnOn",
+			"transitions": [{
+				"from": "recycle",
+				"to": "recycle"
+			},
+			{
+				"from": "no_recycle",
+				"to": "no_recycle"
+			}],
+			"apiPath": "/groups/0/action",
+			"apiContentType": "JSON",
+			"apiMethod": "PUT",
+			"apiBody": "{\"scene\": \"$id\"}"
 		}]
 	}]
 }

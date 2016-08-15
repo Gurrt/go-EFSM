@@ -43,7 +43,7 @@ type instanceObject struct {
 	ApiPath        string
 	APiContentType string
 	ApiMethod      string
-	Id             idObject
+	IdLocation     string
 	Interval       int
 }
 
@@ -142,6 +142,7 @@ func FromJSONFile(filename string) ([]*EFSMInstanceManager, error) {
 	}
 	var r root
 	if err := json.Unmarshal(contents, &r); err != nil {
+		fmt.Print("Error unmarshalling!\n")
 		return nil, err
 	}
 
@@ -168,8 +169,7 @@ func FromJSONFile(filename string) ([]*EFSMInstanceManager, error) {
 
 		ir := &InstanceRetriever{url: class.Info.ApiBase + class.Instances.ApiPath,
 			interval:  class.Instances.Interval,
-			idType:    class.Instances.Id.Type,
-			location:  class.Instances.Id.Location,
+			location:  class.Instances.IdLocation,
 			apiMethod: class.Instances.ApiMethod,
 			apiBody:   ""}
 

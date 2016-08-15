@@ -11,7 +11,6 @@ import (
 type InstanceRetriever struct {
 	url       string
 	interval  int
-	idType    string
 	location  string
 	apiMethod string
 	apiBody   string

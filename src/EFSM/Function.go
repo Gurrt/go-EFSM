@@ -15,6 +15,7 @@ type Function struct {
 	apiContentType string
 	apiBody        string
 	apiMethod      string
+	EFSMid         string
 }
 
 type FunctionJSON struct {
@@ -36,16 +37,17 @@ func (function *Function) Serialize(baseURL string) FunctionJSON {
 	return FunctionJSON{Name: function.Name, Variable: varName, Transitions: transitions, URL: fmt.Sprintf("%s/%s", baseURL, function.Name)}
 }
 
-func (function *Function) findReplaceVariableInApiBody() string {
-	if function.Variable == nil {
-		return function.apiBody
+func (function *Function) findReplaceVariablesInApiBody() string {
+	result := function.apiBody
+	if function.Variable != nil {
+		var replaceValue string = function.Variable.Value
+		if function.Variable.VarType == "string" {
+			replaceValue = "\"" + function.Variable.Value + "\""
+		}
+		result = strings.Replace(result, "\"$var\"", replaceValue, -1)
 	}
-
-	var replaceValue string = function.Variable.Value
-	if function.Variable.VarType == "string" {
-		replaceValue = "\"" + function.Variable.Value + "\""
-	}
-	return strings.Replace(function.apiBody, "\"$var\"", replaceValue, -1)
+	result = strings.Replace(result, "$id", function.EFSMid, -1)
+	return result
 }
 
 func (function *Function) execute(currentState *State, arg string) (*State, error) {
@@ -58,7 +60,8 @@ func (function *Function) execute(currentState *State, arg string) (*State, erro
 				switch function.apiContentType {
 				case "JSON":
 					client := &http.Client{}
-					req, err := http.NewRequest(function.apiMethod, function.apiUrl, strings.NewReader(function.findReplaceVariableInApiBody()))
+					fmt.Printf("Sending %s to %s\n", strings.NewReader(function.findReplaceVariablesInApiBody()), function.apiUrl)
+					req, err := http.NewRequest(function.apiMethod, function.apiUrl, strings.NewReader(function.findReplaceVariablesInApiBody()))
 					if err != nil {
 						return nil, err
 					}
@@ -72,7 +75,9 @@ func (function *Function) execute(currentState *State, arg string) (*State, erro
 						return nil, err
 					}
 					if res.StatusCode < 200 || res.StatusCode >= 300 {
-						fmt.Println("Non 2xx API response: ", body)
+						fmt.Println("Non 2xx API response: ", string(body))
+					} else {
+						fmt.Println("Successful API response: ", string(body))
 					}
 				}
 			}

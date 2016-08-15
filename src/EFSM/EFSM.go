@@ -124,6 +124,7 @@ func (efsm *EFSM) addFunction(function *Function) error {
 			return err
 		}
 	}
+	function.EFSMid = efsm.ID
 	efsm.Functions = append(efsm.Functions, function)
 	return nil
 }
